@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
 if [ "$#" -ne 2 ]; then
-    echo "$0 <version> <output-path>"
-    exit 0
+  echo "$0 <version> <output-path>"
+  exit 0
 fi
-
-mvn clean compile exec:java -Dmcver="$1" -DoutDir="$2" -Dexec.mainClass="LocalizationDownloader"
+{
+  cd $(dirname "$0") || exit 0
+  mvn clean compile
+  mvn exec:java -Dmcver="$1" -DoutDir="$2" -Dexec.mainClass="LocalizationDownloader"
+}
 #java -Dmcver="$1" -DoutDir="$2" -cp target/mc-localization-1.0-SNAPSHOT.jar LocalizationDownloader
