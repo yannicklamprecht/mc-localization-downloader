@@ -7,6 +7,6 @@ fi
 {
   cd $(dirname "$0") || exit 0
   mvn clean compile
-  mvn exec:java -Dmcver="$1" -DoutDir="$2" -Dexec.mainClass="LocalizationDownloader"
+  mvn exec:java -Dmcver="$1" -DoutDir="$2"
 }
 #java -Dmcver="$1" -DoutDir="$2" -cp target/mc-localization-1.0-SNAPSHOT.jar LocalizationDownloader
