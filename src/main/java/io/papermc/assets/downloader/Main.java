@@ -27,10 +27,10 @@ public class Main {
                         .whenCompleteAsync((languageFile, throwable) -> {
                             int current = index.incrementAndGet();
                             if(throwable!=null){
-                                System.out.println("Downloaded failed for "+current + " of " + count + " Files.");
+                                System.out.println(current + " of " + count + " Files failed downloading.");
                                 failed.incrementAndGet();
                             } else {
-                                System.out.println("Downloaded " + current + " of " + count + " Files.");
+                                System.out.println(current + " of " + count + " Files downloaded successfully");
                                 localizationDownloader.safeStringToFile(languageFile.getValue(), targetFileDir.getAbsolutePath() + File.separator + languageFile.getKey().toString() + ".json");
                             }
                             if(index.get() == count){

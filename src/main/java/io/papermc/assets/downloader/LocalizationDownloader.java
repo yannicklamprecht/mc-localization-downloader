@@ -16,12 +16,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.stream.Collectors;
+import java.util.concurrent.ExecutorService;
 
 public class LocalizationDownloader {
 
@@ -58,7 +59,7 @@ public class LocalizationDownloader {
         }
     }
 
-    public Collection<CompletableFuture<LanguageFile>> run(Executor executor) throws IOException {
+    public Collection<CompletableFuture<LanguageFile>> run(ExecutorService executor) throws IOException {
         Collection<CompletableFuture<LanguageFile>> languageFiles = new ArrayList<>();
 
         String versionManifest = fetch("https://launchermeta.mojang.com/mc/game/version_manifest.json");
@@ -80,14 +81,12 @@ public class LocalizationDownloader {
                 String assetData = fetch(assets.getAssetindex().getUrl());
 
                 ClientAssets clientAssets = gson.fromJson(assetData, ClientAssets.class);
-                Map<String, HashSize> assetObjects = clientAssets.getObjects()
-                        .entrySet().stream()
-                        .filter(entry -> entry.getKey().startsWith("minecraft/lang/"))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-                for (Map.Entry<String, HashSize> entry : assetObjects.entrySet()) {
-                    CompletableFuture<LanguageFile> languageFileCompletableFuture = downloadAsync(entry.getKey(),entry.getValue().getHash(), executor);
-                    languageFiles.add(languageFileCompletableFuture);
+                for (Map.Entry<String, HashSize> stringHashSizeEntry : clientAssets.getObjects()
+                        .entrySet()) {
+                    if (stringHashSizeEntry.getKey().startsWith("minecraft/lang/")) {
+                        CompletableFuture<LanguageFile> languageFileCompletableFuture = downloadAsync(stringHashSizeEntry.getKey(),stringHashSizeEntry.getValue().getHash(), executor);
+                        languageFiles.add(languageFileCompletableFuture);
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
