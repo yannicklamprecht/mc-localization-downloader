@@ -1,4 +1,4 @@
-package pojos.clientassets;
+package io.papermc.assets.downloader.pojos.clientassets;
 
 public class HashSize {
     private String hash;

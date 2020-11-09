@@ -1,21 +1,26 @@
+package io.papermc.assets.downloader;
+
 import com.google.gson.Gson;
-import pojos.assets.Data;
-import pojos.clientassets.ClientAssets;
-import pojos.clientassets.HashSize;
-import pojos.manifest.VersionManifest;
-import pojos.manifest.Versions;
+import io.papermc.assets.downloader.pojos.assets.Data;
+import io.papermc.assets.downloader.pojos.clientassets.ClientAssets;
+import io.papermc.assets.downloader.pojos.clientassets.HashSize;
+import io.papermc.assets.downloader.pojos.manifest.VersionManifest;
+import io.papermc.assets.downloader.pojos.manifest.Versions;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 public class LocalizationDownloader {
@@ -26,22 +31,6 @@ public class LocalizationDownloader {
 
     public LocalizationDownloader(String mcVersion) {
         this.mcVersion = mcVersion;
-    }
-
-    public static void main(String[] args) {
-        LocalizationDownloader localizationDownloader = new LocalizationDownloader(System.getProperty("mcver"));
-        String targetDir = System.getProperty("outDir", "languages");
-
-        try {
-            File targetFileDir = new File(targetDir);
-            targetFileDir.mkdirs();
-            localizationDownloader.run((locale, data, index, amount) -> {
-                System.out.println("Downloaded " + index + " of " + amount + " Files.");
-                localizationDownloader.safeStringToFile(data, targetFileDir.getAbsolutePath() + File.separator + locale.toString() + ".json");
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public void safeStringToFile(String data, String fileName) {
@@ -69,10 +58,11 @@ public class LocalizationDownloader {
         }
     }
 
-    public void run(DownloadCallback languageDataConsumer) throws IOException {
+    public Collection<CompletableFuture<LanguageFile>> run(Executor executor) throws IOException {
+        Collection<CompletableFuture<LanguageFile>> languageFiles = new ArrayList<>();
+
         String versionManifest = fetch("https://launchermeta.mojang.com/mc/game/version_manifest.json");
         VersionManifest versionManifestGson = gson.fromJson(versionManifest, VersionManifest.class);
-
 
         if (mcVersion == null) {
             mcVersion = versionManifestGson.getLatest().getRelease();
@@ -95,37 +85,39 @@ public class LocalizationDownloader {
                         .filter(entry -> entry.getKey().startsWith("minecraft/lang/"))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-                int index = 0;
-                int size = assetObjects.size();
                 for (Map.Entry<String, HashSize> entry : assetObjects.entrySet()) {
-
-                    index++;
-
-                    String languageFileName = entry.getKey();
-                    String hash = entry.getValue().getHash();
-                    String shortHash = hash.substring(0, 2);
-
-                    String url = "http://resources.download.minecraft.net/" + shortHash + "/" + hash;
-                    try {
-                        String languageData = fetch(url);
-                        String[] langKeyArray = languageFileName.replaceAll("minecraft/lang/|.json", "").split("_");
-                        if (langKeyArray.length == 2) {
-                            Locale locale = new Locale(langKeyArray[0], langKeyArray[1]);
-                            languageDataConsumer.onDataIncomming(locale, languageData, index, size);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
+                    CompletableFuture<LanguageFile> languageFileCompletableFuture = downloadAsync(entry.getKey(),entry.getValue().getHash(), executor);
+                    languageFiles.add(languageFileCompletableFuture);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         });
+        return languageFiles;
     }
 
-    @FunctionalInterface
-    public interface DownloadCallback {
-        void onDataIncomming(Locale locale, String data, int index, int amount);
+    private CompletableFuture<LanguageFile> downloadAsync(String languageKey, String hash, Executor executor){
+        String shortHash = hash.substring(0, 2);
+        String url = "http://resources.download.minecraft.net/" + shortHash + "/" + hash;
+
+        return CompletableFuture.supplyAsync(() -> {
+            LanguageFile languageFile = null;
+            try {
+                String languageData = fetch(url);
+                String[] langKeyArray = languageKey.replaceAll("minecraft/lang/|.json", "").split("_");
+                if (langKeyArray.length == 2) {
+                    Locale locale = new Locale(langKeyArray[0], langKeyArray[1]);
+                    languageFile = new LanguageFile(locale, languageData);
+                }
+            } catch (IOException e) {
+                throw new IllegalStateException(e);
+            }
+            if(languageFile==null) throw new IllegalStateException();
+
+            return languageFile;
+        }, executor);
+
     }
+
+
 }
