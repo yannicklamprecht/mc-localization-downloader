@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -14,21 +14,34 @@ public class Main {
         LocalizationDownloader localizationDownloader = new LocalizationDownloader(System.getProperty("mcver"));
         String targetDir = System.getProperty("outDir", "languages");
 
-        Executor executor = Executors.newScheduledThreadPool(20);
+        ExecutorService executor = Executors.newScheduledThreadPool(20);
         try {
             File targetFileDir = new File(targetDir);
             targetFileDir.mkdirs();
             Collection<CompletableFuture<LanguageFile>> completableFutures = localizationDownloader.run(executor);
             AtomicInteger index = new AtomicInteger();
+            AtomicInteger failed = new AtomicInteger();
             long count = completableFutures.size();
             for (CompletableFuture<LanguageFile> languageFileCompletableFuture : completableFutures) {
-                languageFileCompletableFuture.thenAcceptAsync(languageFile -> {
-                    System.out.println("Downloaded " + index.incrementAndGet() + " of " + count + " Files.");
-                    localizationDownloader.safeStringToFile(languageFile.getValue(), targetFileDir.getAbsolutePath() + File.separator + languageFile.getKey().toString() + ".json");
-                });
+                languageFileCompletableFuture
+                        .whenCompleteAsync((languageFile, throwable) -> {
+                            int current = index.incrementAndGet();
+                            if(throwable!=null){
+                                System.out.println("Downloaded failed for "+current + " of " + count + " Files.");
+                                failed.incrementAndGet();
+                            } else {
+                                System.out.println("Downloaded " + current + " of " + count + " Files.");
+                                localizationDownloader.safeStringToFile(languageFile.getValue(), targetFileDir.getAbsolutePath() + File.separator + languageFile.getKey().toString() + ".json");
+                            }
+                            if(index.get() == count){
+                                System.out.println("Statistic: success: "+ (index.get()-failed.get())+ " failed: "+ failed.get());
+                                executor.shutdown();
+                            }
+                        });
             }
         } catch (IOException e) {
             e.printStackTrace();
+            executor.shutdown();
         }
     }
 }
