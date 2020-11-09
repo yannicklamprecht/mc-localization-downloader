@@ -14,7 +14,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.2.1</version>
                 <configuration>
-                    <mainClass>LocalizationDownloader</mainClass>
+                    <mainClass>io.papermc.assets.downloader.Main</mainClass>
                 </configuration>
             </plugin>
         </plugins>

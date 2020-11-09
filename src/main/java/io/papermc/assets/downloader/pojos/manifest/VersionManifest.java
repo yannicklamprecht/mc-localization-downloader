@@ -1,4 +1,4 @@
-package pojos.manifest;
+package io.papermc.assets.downloader.pojos.manifest;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;

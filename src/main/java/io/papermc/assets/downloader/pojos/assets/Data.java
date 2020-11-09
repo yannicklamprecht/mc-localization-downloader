@@ -1,4 +1,4 @@
-package pojos.assets;
+package io.papermc.assets.downloader.pojos.assets;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;

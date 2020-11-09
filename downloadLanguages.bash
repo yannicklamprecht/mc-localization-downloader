@@ -9,4 +9,4 @@ fi
   mvn clean compile
   mvn exec:java -Dmcver="$1" -DoutDir="$2"
 }
-#java -Dmcver="$1" -DoutDir="$2" -cp target/mc-localization-1.0-SNAPSHOT.jar LocalizationDownloader
+#java -Dmcver="$1" -DoutDir="$2" -cp target/mc-localization-1.0-SNAPSHOT.jar io.papermc.assets.downloader.LocalizationDownloader

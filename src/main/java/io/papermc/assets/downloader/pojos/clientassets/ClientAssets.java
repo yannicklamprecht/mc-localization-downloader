@@ -1,4 +1,4 @@
-package pojos.clientassets;
+package io.papermc.assets.downloader.pojos.clientassets;
 
 import java.util.HashMap;
 import java.util.Map;
