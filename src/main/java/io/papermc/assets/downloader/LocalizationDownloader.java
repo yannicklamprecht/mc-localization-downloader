@@ -1,6 +1,7 @@
 package io.papermc.assets.downloader;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.papermc.assets.downloader.pojos.assets.Data;
 import io.papermc.assets.downloader.pojos.clientassets.ClientAssets;
 import io.papermc.assets.downloader.pojos.clientassets.HashSize;
@@ -12,11 +13,12 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Type;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -27,6 +29,7 @@ import java.util.concurrent.ExecutorService;
 public class LocalizationDownloader {
 
     private final Gson gson = new Gson();
+    private final Type listType = new TypeToken<List<String>>() {}.getType();
 
     private String mcVersion;
 
@@ -34,6 +37,9 @@ public class LocalizationDownloader {
         this.mcVersion = mcVersion;
     }
 
+    public void safeStringListToFile(List<String> stringList, String fileName){
+        safeStringToFile(gson.toJson(stringList, listType), fileName);
+    }
     public void safeStringToFile(String data, String fileName) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
             writer.write(data);

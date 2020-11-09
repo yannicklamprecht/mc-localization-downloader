@@ -8,5 +8,7 @@ fi
   cd $(dirname "$0") || exit 0
   mvn clean compile
   mvn exec:java -Dmcver="$1" -DoutDir="$2"
+  files="$(ls "$2")"
+   echo "$files"> "$2/available_languages.txt"
 }
 #java -Dmcver="$1" -DoutDir="$2" -cp target/mc-localization-1.0-SNAPSHOT.jar io.papermc.assets.downloader.LocalizationDownloader

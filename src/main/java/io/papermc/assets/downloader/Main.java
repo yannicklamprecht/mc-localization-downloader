@@ -26,19 +26,20 @@ public class Main {
                 languageFileCompletableFuture
                         .whenCompleteAsync((languageFile, throwable) -> {
                             int current = index.incrementAndGet();
-                            if(throwable!=null){
+                            if (throwable != null) {
                                 System.out.println(current + " of " + count + " Files failed downloading.");
                                 failed.incrementAndGet();
                             } else {
                                 System.out.println(current + " of " + count + " Files downloaded successfully");
                                 localizationDownloader.safeStringToFile(languageFile.getValue(), targetFileDir.getAbsolutePath() + File.separator + languageFile.getKey().toString() + ".json");
                             }
-                            if(index.get() == count){
-                                System.out.println("Statistic: success: "+ (index.get()-failed.get())+ " failed: "+ failed.get());
+                            if (index.get() == count) {
+                                System.out.println("Statistic: success: " + (index.get() - failed.get()) + " failed: " + failed.get());
                                 executor.shutdown();
                             }
                         });
             }
+
         } catch (IOException e) {
             e.printStackTrace();
             executor.shutdown();
